@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css"
+          integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+		  <script src="https://unpkg.com/htmx.org@1.6.0"></script>
+	
+    <title>Live Streaming Demonstration with different object detection models</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<style>
+		* {
+		  box-sizing: border-box;
+		}
+
+		body {
+			background: #f1f1f1;
+		}
+
+		.center {
+		  margin: auto;
+		  width: 150%;
+		  border: 3px solid #73AD21;
+		  padding: 10px;
+		}
+
+		#model_selector {
+		  margin-top: 5%;
+		  text-align: center;
+		}
+
+		#model {
+		  width: 10%;
+		  min-width: 200px;
+		  margin: auto;
+		}
+
+		.row {
+		  margin-left:-5px;
+		  margin-right:-5px;
+		}
+		  
+		.column {
+		  float: left;
+		  width: 50%;
+		  padding: 5px;
+		}
+
+		/* Clearfix (clear floats) */
+		.row::after {
+		  content: "";
+		  clear: both;
+		  display: table;
+		}
+
+		table {
+		  border-collapse: collapse;
+		  border-spacing: 0;
+		  width: 100%;
+		  border: 1px solid #ddd;
+		}
+
+		th, td {
+		  text-align: left;
+		  padding: 16px;
+		}
+
+		tr:nth-child(even) {
+		  background-color: #f2f2f2;
+		}
+	</style>
+</head>
+<body>
+	<form action="." id="model_selector">
+		<label for="model">Choose your model:</label>
+		<select name="model" id="model" class="form-control">
+			<option value="coco_ssd_mobilenet_v1" {% if data.model == 'coco_ssd_mobilenet_v1'%}selected{% endif %}>MobileNet v1</option>
+			<option value="coco_tiny_yolov5" {% if data.model == 'coco_tiny_yolov5'%}selected{% endif %}>Yolo v5 s</option>
+		</select>
+		<br><br>
+		<input class="btn btn-primary" type="submit" value="Submit" onclick="showName()">
+	</form>
+	
+	{% if data.model %}
+	<div class="container">
+		<div class="row">
+			<div class="col-lg-8  offset-lg-2">
+				<h3 class="mt-5" id="name">Live Streaming Demonstration with....</h3>
+				<img src="video_feed?model={{data.model}}" width="100%">
+			</div>
+			<div hx-get="./results" hx-trigger="every 1s" style="height:500px; width: 700px;"></div>
+		</div>
+	</div>
+	<script>
+	function showName() {
+		var selected = document.getElementById('model');
+		var value = model.options[selected.selectedIndex].value;
+		document.getElementById("name").innerHTML = "Live streaming object detection demonstration with " + value;
+	}
+	showName();
+	</script>
+	{% endif %}
+	
+
+
+  
+</body>
+</html>

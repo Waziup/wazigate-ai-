@@ -1,0 +1,19 @@
+version: "3"
+
+services:
+  wazi-app:
+    image: waziup/wazigate-ai:newtorch6_tf2.5
+    container_name: waziup.wazigate-ai
+    build:
+      context: ./
+    volumes:
+      -/home/pi/waziup-gateway/apps/waziup/wazigate-ai:/var/lib/waziapp
+    ports:
+      - "5000:5000"
+    privileged: true
+    environment:
+      - TEST_VAR=1
+    healthcheck:
+      test: curl --fail --unix-socket /var/lib/waziup/proxy.sock http://localhost/ || exit 1 #curl --fail http://localhost:5000/ || exit 1
+      interval: 30s
+      retries: 10 # Will try for 5 minutes

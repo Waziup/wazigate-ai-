@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8" />
+  <title>WaziApp Hello World Example</title>
+  <meta name="description" content="" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <link rel="stylesheet" href="main.css" type="text/css" />
+  <script type="text/javascript" src="jquery-3.2.1.min.js"></script>
+
+  <script type="text/javascript">
+    function loadStuff() {
+      $.get("../time", function (data) {
+        $("#app").html(data).fadeIn();
+        autoR = setTimeout(function () { loadStuff() }, 2000);
+      });
+    }
+    $(function () {
+      $("#app").html("<img src=\"./loading.gif\" /> Loading...").fadeIn();
+      loadStuff();
+    });
+
+  </script>
+</head>
+
+<body style="height: 100%;">
+  <div class="center">
+    <h1>WaziApp Sample Application</h1>
+    <p>This simple app calls a REST API on "/time" every 2 seconds and shows it here:</p>
+    <div class="fancy inset">
+      <h2 id="app"></h2>
+    </div>
+  </div>
+</body>
+
+</html>
