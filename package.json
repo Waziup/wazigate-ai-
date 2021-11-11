@@ -11,7 +11,7 @@
 		"icon": "ui/icon.svg",
 		"menu": {
 			"Wazigate-AI": {
-				"primary": "Hello World AI Python",
+				"primary": "wazigate-ai",
 				"icon": "ui/menu-icon.svg",
 				"href": "#/apps/waziup.wazigate-ai/"
 			}
