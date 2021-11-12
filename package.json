@@ -1,7 +1,7 @@
 {
-	"name": "wazigate-ai",
+	"name": "wazigate-webcam-inference",
 	"version": "1.0.0",
-	"description": "Hello world AI sample app written in Python",
+	"description": "Wazigate-Webcam-Inference is an application for the WaziGate that implements computer vision models for object detection.",
 	"private": false,
 	"author": {
 		"name": "Waziup"
@@ -10,10 +10,10 @@
 	"waziapp": {
 		"icon": "ui/icon.svg",
 		"menu": {
-			"Wazigate-AI": {
-				"primary": "wazigate-ai",
+			"Wazigate-Webcam-Inference": {
+				"primary": "wazigate-webcam-inference",
 				"icon": "ui/menu-icon.svg",
-				"href": "#/apps/waziup.wazigate-ai/"
+				"href": "#/apps/waziup.wazigate-webcam-inference/"
 			}
 		}
 	}

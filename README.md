@@ -1,10 +1,10 @@
-# WaziGate-AI
+# WaziGate-Webcam-Inference
 
-WaziGate-AI is an application for the WaziGate that implements computer vision models for object detection.  
+Wazigate-Webcam-Inference is an application for the WaziGate that implements computer vision models for object detection.  
 
-## WaziApp containing object detection example for various models
+## Description
 
-With the help of this application you can utilize the WaziGate and RaspiCam to track objects and evaluate their occurrences.
+WaziApp containing object detection example for various models.With the help of this application you can utilize the WaziGate and RaspiCam to track objects and evaluate their occurrences.
 
 The models are trained with the COCO (Common Objects in Context) [1] dataset. It contains 80 classes, you can have a look on them [here](coco_tiny_yolov5/labelmap.txt "labelmap.txt"). 
 
@@ -23,7 +23,7 @@ If you want to build it from source you have to follow these steps.
 1. Download the repository to your local machine:
 
 ```
-git clone https://github.com/Waziup/wazigate-ai-.git
+git clone https://github.com/Waziup/wazigate-webcam-inference.git
 ```
 
 2. Install docker and issue the following commands
@@ -38,13 +38,13 @@ docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
 3. Navigate to the repository:
 
 ```
-cd wazigate-ai-
+cd wazigate-webcam-inference
 ```
 
 4. Issue the following command to build the docker image from the [Dockerfile](Dockerfile "Dockerfile"):
 
 ```
-docker buildx build –platform linux/arm/v7 -t waziup/wazigate-ai:latest –load .
+docker buildx build –platform linux/arm/v7 -t waziup/wazigate-webcam-inference:latest –load .
 ```
 
 5. To copy the image via SSH to the raspberry pi with the following command:
@@ -56,7 +56,7 @@ docker save id_of_build_image | gzip | pv | ssh pi@ip_of_pi_in_local_network doc
 6. It can occur that the name of the repository is lost, so tag the image appropriate to the docker-compose.yml
 
 ```
-docker tag id_of_build_image waziup/wazigate-ai:latest
+docker tag id_of_build_image waziup/wazigate-webcam-inference:latest
 ```
 
 7. Afterwards, start the application with via the UI of the WaziGate or run the following command, to see the logs in console:

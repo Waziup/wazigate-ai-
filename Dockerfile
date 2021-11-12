@@ -44,15 +44,15 @@ RUN pip3 install flask-caching
 RUN pip3 install picamera[array]
 
 # Copy whole folder to container
-COPY . /app/wazigate-ai
+COPY . /app/wazigate-webcam-inference
 
-WORKDIR /app/wazigate-ai
+WORKDIR /app/wazigate-webcam-inference
 
 # Make port available
 EXPOSE 5000/tcp
 
 
 # Trigger Python webcam inference script
-ENTRYPOINT ["python3", "/app/wazigate-ai/app.py"]
+ENTRYPOINT ["python3", "/app/wazigate-webcam-inference/app.py"]
 
 RUN [ "cross-build-end" ]

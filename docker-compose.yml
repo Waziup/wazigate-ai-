@@ -2,12 +2,12 @@ version: "3"
 
 services:
   wazi-app:
-    image: waziup/wazigate-ai:latest
-    container_name: waziup.wazigate-ai
+    image: waziup/wazigate-webcam-inference:latest
+    container_name: waziup.wazigate-webcam-inference
     build:
       context: ./
     volumes:
-      - /home/pi/waziup-gateway/apps/waziup/wazigate-ai:/var/lib/waziapp
+      - /home/pi/waziup-gateway/apps/waziup/wazigate-webcam-inference:/var/lib/waziapp
     ports:
       - "5000:5000"
     privileged: true
