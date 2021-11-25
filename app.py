@@ -3,30 +3,19 @@ import os
 #import argparse
 import cv2
 import numpy as np
-#import sys
 import time
-#from threading import Thread
 import importlib.util
 from pathlib import Path
 
 from flask import Flask, render_template, Response, request
 from flask_caching import Cache
-#from jinja2 import Environment
-#from jinja2.loaders import FileSystemLoader
 from werkzeug.serving import run_simple
 
 import torch
-#import torchvision
-#from utils.metrics import box_iou, fitness
-#import math
-import torch.backends.cudnn as cudnn
 
 from utils.plots import Annotator, colors
-from utils.general import apply_classifier, check_img_size, check_imshow, check_requirements, check_suffix, colorstr, \
-    increment_path, non_max_suppression, print_args, save_one_box, scale_coords, set_logging, \
-    strip_optimizer, xyxy2xywh
-from utils.torch_utils import load_classifier, select_device, time_sync
-#from utils.datasets import LoadImages, LoadStreams
+from utils.general import check_suffix, non_max_suppression, scale_coords
+from utils.torch_utils import select_device
 
 import logging
 
@@ -42,11 +31,6 @@ logging.basicConfig(level=logging.DEBUG, format=f'%(asctime)s %(levelname)s %(na
 MODEL_NAME = 'coco_tiny_yolov5'
 GRAPH_NAME = 'detect.tflite'
 LABELMAP_NAME = 'labelmap.txt'
-min_conf_threshold = 0.5
-resW = '640'
-resH = '480'
-imW = int(resW)
-imH = int(resH)
 use_TPU = False
 
 # devalid time 
@@ -87,11 +71,8 @@ def get_labels(PATH_TO_LABELS):
 
 
 def gen_frames_mobile(MODEL_NAME):
-    # Init caching
-    from common import cache
     import time
 
-    #cache = Cache(app, config={'CACHE_TYPE': 'simple'})
     cache = Cache(app, config={
         'CACHE_TYPE': 'filesystem',
         'CACHE_DIR': 'my_cache_directory',
@@ -411,7 +392,6 @@ def index():
 def results():
     """Show results of inference"""
     from time import sleep
-    from common import cache
     
     cache = Cache(app, config={
         'CACHE_TYPE': 'filesystem',
@@ -465,11 +445,11 @@ def results():
 
 def main():  
     # Run local:
-    #app.run(host='0.0.0.0',use_reloader=False,debug=True)
+    app.run(host='0.0.0.0',use_reloader=False,debug=True)
     #app.run(host='unix:///var/lib/waziapp/proxy.sock',use_reloader=False,debug=True)
     
     # Run as waziapp via sockets
-    run_simple('unix:///var/lib/waziapp/proxy.sock', 0, app, threaded=True)
+    #   run_simple('unix:///var/lib/waziapp/proxy.sock', 0, app, threaded=True)
     
 
 if __name__ == '__main__':
