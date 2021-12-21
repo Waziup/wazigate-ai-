@@ -10,6 +10,7 @@ env.*
 devops
 media
 __pycache__
+misc
 
 # To prevent storing dev/temporary container data
 *.csv
