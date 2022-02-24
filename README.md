@@ -63,7 +63,7 @@ cd wazigate-webcam-inference
 4. Issue the following command to build the docker image from the [Dockerfile](https://github.com/Waziup/wazigate-webcam-inference/blob/main/Dockerfile "Dockerfile"):
 
 ```
-docker buildx build –platform linux/arm/v7 -t waziup/wazigate-webcam-inference:latest –load .
+docker buildx build -–platform=linux/arm/v7 -t waziup/wazigate-webcam-inference:latest -–load .
 ```
 
 5. To copy the image via SSH to the raspberry pi with the following command:
