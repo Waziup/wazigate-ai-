@@ -50,7 +50,7 @@ git clone https://github.com/Waziup/wazigate-webcam-inference.git
 ```
 docker buildx create --name rpibuilder --platform linux/arm/v7
 docker buildx use rpibuilder 
-docker buildx inspect –bootstrap
+docker buildx inspect --bootstrap
 docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
 ```
 
