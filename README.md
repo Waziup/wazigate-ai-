@@ -1,12 +1,24 @@
+---
+date: 2020-07-24T09:00:00+00:00
+title: Computed Vision with WaziGate
+menu:
+  main:
+    title: Computer Vision WaziApp
+    name: waziapps_ai
+    parent: courses
+    weight: 1
+---
+
 ___________________________________________________________________________________________________________________
 
-A Wazigate Application for object detection
-===========================================
+Introduction
+============
 
-Description
------------
+Computer vision is a subfield of machine learning and artificial intelligence, which deals with how computers can recognize visual data in form of images or videos. One understands various techniques to locate elements in images or identify and catalog videos. The goal is to use an automated process to gain a visual understanding while distinguishing between relevant and less distinguish relevant information. This is a complex process that otherwise reserved only for the human visual system, part of the nervous system. Today it is common to train image recognition models, which take an image as a Receive input and output one or more objects and possibly more recognize attributes. The various objects possible to recognize are in classes assigned. Examples of these images must first be stored in so-called image databases collected. In addition to the class prediction these image recognition models also provide an assessment of the accuracy of the prediction meeting. This value can be understood as a kind of probability of prediction and describes how confident the model is that an image becomes a learned class can be assigned. In general, the recognition systems distinguish between single and multiple recognition. With a single detection, the model says only one class as prediction for the entire image. Models designed for multiple detection were able to recognize several objects of different classes in one image. Consequently, information on the localization of the object in the image and confidence needed.
 
-A WaziApp containing object detection example for various models. With the help of this application you can utilize the WaziGate and RaspiCam to track objects and evaluate their occurrences.
+
+In this course, we will learn how to build a WaziApp capable or performing object detection on the WaziGate.
+With the help of this application you can utilize the WaziGate to track objects and evaluate their occurrences. This is done via a RaspiCam, a Webcam or a URL using the Real Time Streaming Protocol (RTSP). 
 
 **Link to Github repository:** [waziup/wazigate-webcam-inference](https://github.com/Waziup/wazigate-webcam-inference)
 
@@ -14,7 +26,7 @@ A WaziApp containing object detection example for various models. With the help 
 
 The models are trained with the COCO (Common Objects in Context) [1] dataset. It contains 80 classes, you can have a look on them [here](coco_tiny_yolov5/labelmap.txt "labelmap.txt"). 
 
-From now you can choose between two models for object detection.
+For now you can choose between two models for object detection.
 
 1. Mobile Net v1 (224x224) [2]
 2. Yolo Version 5s (320x320) [3]
@@ -23,19 +35,52 @@ The App is in an early stage of development, it is still work in progress, some 
 
 ___________________________________________________________________________________________________________________
 
-Download the App from DockerHub
--------------------------------
+Quick start
+===========
 
-You can just download the build docker image from Dockerhub.
+Install via user interface
+--------------------------
+
+You can just download the build docker image from the Waziup Dockerhub directly on your RPI. All you have to do is, to navigate in the user interface of your WaziGate to App menu, which is located in the sidebar. Then you want to press the "plus" button, located in the right-hand side bottom of the webpage, illustrated below.
+
+![Press the plus button.](./media/plus_btn.png)
+
+After you pressed the button you will see a menu, where you can type a name of an image. The image has to be available on dockerhub.
+
+![Type a name of an image available on dockerhub.](./media/install_custom_app.png)
+
+Type the name of the image you want to install, in this case you have to type:
+
+```
+waziup/wazigate-webcam-inference
+```
+
+Now you can press the "DOWNLOAD AND INSTALL" button, after the install routine is finished, press the "LAUNCH THE APP" button.
+
+Install via docker
+------------------
+
+You can also connect to via ssh to your Raspberry Pi and issue the following command, to pull the image from [dockerhub](https://hub.docker.com/r/waziup/wazigate-webcam-inference)
 
 ```
 docker pull waziup/wazigate-webcam-inference
 ```
 
-___________________________________________________________________________________________________________________
+Afterwards you have to start the app, you can either do this via the following command:
 
-Build and run the object detection App
---------------------------------------
+```
+cd /var/lib/waziup
+
+wget -O docker-compose.yml https://raw.githubusercontent.com/Waziup/wazigate-webcam-inference/main/docker-compose.yml
+
+docker-compose up   (docker-compose file has to be in the same location)
+```
+
+
+Building the application
+========================
+
+The WaziApp is available at [github](https://github.com/Waziup/wazigate-webcam-inference)
 
 If you want to build it from source you have to follow these steps.
 
@@ -84,10 +129,37 @@ docker tag <id_of_build_image> waziup/wazigate-webcam-inference:latest
 docker-compose up
 ```
 
-___________________________________________________________________________________________________________________
+Your WaziApp is now up an running!
 
-Additional information on the networks used
--------------------------------------------
+
+Usage
+=====
+
+After you installed the app, with one of the previous steps. It should be visible in the user interface, in the sidebar. Like shown below:
+
+![Sidebar view of a WaziApp](./media/sidebar_app.png)
+
+Click on "wazigate-webcam-inference" in the sidebar to start the application. If the application does not start, go into the Apps menu and click on "wazigate-webcam-inference" card and press the "START" button.
+
+In the first screen of the application, there is a dropdown menu, here you can choose the network which should be utilized. 
+
+![Dropdown menu, you can choose between different networks here.](./media/drop_down.png)
+
+MobilNetv1 is a very fast network, which is not that accurate. YOLOv5 is also fast, but more accurate. More information on the used networks are available in the next chapter.
+
+Below there is an example screenshot, that shows the WaziApp which is running on the WaziGate.
+
+![Example screenshot, that shows the WaziApp which runs on the WaziGate.](./media/webcam_example.png)
+
+
+Below the videostream, there is a table which shows the amount of detections and the timestap of the last detection. 
+
+With the help of this application you can count visual occurrences of different objects, with help of your Raspicam. This can be beneficial in a surveillance uncase. 
+
+<!-- TODO: how to use the application? add usage examples-->
+
+Some remarks on the networks used
+============
 
 For now, like mentioned above, there are two networks someone can choose from. In the following there is some information about the used networks.
 
@@ -107,10 +179,9 @@ Yolov5 is a state of the art realtime object detection network [3]. It has got 2
 
 Further information about the network is given [here](https://arxiv.org/abs/1704.04861). There is no Yolov5 paper, to this date, but Yolov4 has a paper and does not differ much.
 
-___________________________________________________________________________________________________________________
 
-References:
-----------
+References
+==========
 
 [1] https://cocodataset.org/#home
 

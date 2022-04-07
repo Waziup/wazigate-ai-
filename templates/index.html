@@ -82,6 +82,18 @@
 			<option value="coco_tiny_yolov5" {% if data.model == 'coco_tiny_yolov5'%}selected{% endif %}>Yolo v5 s</option>
 		</select>
 		<br><br>
+		<label for="source">Choose the source of the video-feed:</label>
+		<div>
+			<input type="radio" id="radio_webcam"
+			 name="source" value="webcam">
+			<label for="radio_webcam">Webcam or RaspiCam:</label>
+		
+			<input type="radio" id="radio_rtsp"
+			 name="source" value="rtsp">
+			<label for="radio_rtsp">Via RTSP-Link (or CCTV stream):</label>
+		</div>
+  		<input type="text" id="source_url" name="source_url">
+		<br><br>
 		<input class="btn btn-primary" type="submit" value="Submit" onclick="showName()">
 	</form>
 	
@@ -90,16 +102,25 @@
 		<div class="row">
 			<div class="col-lg-8  offset-lg-2">
 				<h3 class="mt-5" id="name">Live Streaming Demonstration with....</h3>
-				<img src="video_feed?model={{data.model}}" width="100%">
+				<img src="video_feed?model={{data.model}}&source={{data.source}}&source_url={{data.source_url}}" width="100%">
 			</div>
 			<div hx-get="./results" hx-trigger="every 1s" style="height:500px; width: 700px;"></div>
 		</div>
 	</div>
 	<script>
+	// function getSourceSettings() {
+	// 	if (document.getElementById("radio_webcam").checked) {
+	// 		source = "webcam";
+	// 	}
+	// 	else if (document.getElementById("radio_rtsp").checked) {
+	// 		source = document.getElementById("radio_rtsp").value;
+	// 	}
+	// }
 	function showName() {
 		var selected = document.getElementById('model');
 		var value = model.options[selected.selectedIndex].value;
 		document.getElementById("name").innerHTML = "Live streaming object detection demonstration with " + value;
+		//getSourceSettings();
 	}
 	showName();
 	</script>

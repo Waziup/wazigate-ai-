@@ -5,6 +5,7 @@ import cv2
 import numpy as np
 import time
 import importlib.util
+import threading, queue
 from pathlib import Path
 
 from flask import Flask, render_template, Response, request
@@ -19,10 +20,41 @@ from utils.torch_utils import select_device
 
 import logging
 
+
+# bufferless VideoCapture
+class VideoCapture:
+
+  def __init__(self, name):
+    self.cap = cv2.VideoCapture(name)
+    self.q = queue.Queue()
+    t = threading.Thread(target=self._reader)
+    t.daemon = True
+    t.start()
+
+  # read frames as soon as they are available, keeping only most recent one
+  def _reader(self):
+    while True:
+      ret, frame = self.cap.read()
+      if not ret:
+        break
+      if not self.q.empty():
+        try:
+          self.q.get_nowait()   # discard previous (unprocessed) frame
+        except queue.Empty:
+          pass
+      self.q.put(frame)
+
+  def read(self):
+    return self.q.get()
+
+
 app = Flask(__name__)
 
-camera = cv2.VideoCapture(0)#cv2.VideoCapture('rtsp://freja.hiof.no:1935/rtplive/_definst_/hessdalen03.stream')  # use 0 for web camera
-#  for cctv camera use rtsp://username:password@ip_address:554/user=username_password='password'_channel=channel_number_stream=0.sdp' instead of camera
+# This is getting setup by html arguments later
+#camera = VideoCapture(0)
+# camera = cv2.VideoCapture('rtsp://wowzaec2demo.streamlock.net/vod/mp4:BigBuckBunny_115k.mp4 ! appsink max-buffers=1 drop=true')
+# cv2.VideoCapture('rtsp://freja.hiof.no:1935/rtplive/_definst_/hessdalen03.stream')  
+# for cctv camera use rtsp://username:password@ip_address:554/user=username_password='password'_channel=channel_number_stream=0.sdp' instead of camera
 # for local webcam use cv2.VideoCapture(0)
 
 # Could also add file to log
@@ -46,6 +78,7 @@ else:
     from tensorflow.lite.python.interpreter import Interpreter
     if use_TPU:
         from tensorflow.lite.python.interpreter import load_delegate
+
 
 # Update list of classifications and add time stamps        
 def process_occurrence(occurrances,object_nr,time_occurrence):
@@ -148,76 +181,72 @@ def gen_frames_mobile(MODEL_NAME):
     
     
     while True:
-        
         # Capture frame-by-frame
-        success, frame1 = camera.read()  # read the camera frame
-        if not success:
-            print("camera.read() failed")
-            break
-        else:
-             # Start timer (for calculating frame rate)
-            t1 = cv2.getTickCount()
+        frame1 = camera.read()  # read the camera frame
+    
+        # Start timer (for calculating frame rate)
+        t1 = cv2.getTickCount()
+    
+        # Acquire frame and resize to expected shape [1xHxWx3]
+        frame = frame1.copy()
+        frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        frame_resized = cv2.resize(frame_rgb, (width, height))
+        input_data = np.expand_dims(frame_resized, axis=0)
+    
+        # Normalize pixel values if using a floating model (i.e. if model is non-quantized)
+        if floating_model:
+            input_data = (np.float32(input_data) - input_mean) / input_std
+    
+        # Perform the actual detection by running the model with the image as input
+        interpreter.set_tensor(input_details[0]['index'],input_data)
+        interpreter.invoke()
+    
+        # Retrieve detection results
+        boxes = interpreter.get_tensor(output_details[0]['index'])[0] # Bounding box coordinates of detected objects
+        classes = interpreter.get_tensor(output_details[1]['index'])[0] # Class index of detected objects
+        scores = interpreter.get_tensor(output_details[2]['index'])[0] # Confidence of detected objects
+        #num = interpreter.get_tensor(output_details[3]['index'])[0]  # Total number of detected objects (inaccurate and not needed)
+    
+        # Loop over all detections and draw detection box if confidence is above minimum threshold
+        for i in range(len(scores)):
+            if ((scores[i] > min_conf_threshold) and (scores[i] <= 1.0)):
+                # Get bounding box coordinates and draw box
+                # Interpreter can return coordinates that are outside of image dimensions, need to force them to be within image using max() and min()
+                ymin = int(max(1,(boxes[i][0] * imH)))
+                xmin = int(max(1,(boxes[i][1] * imW)))
+                ymax = int(min(imH,(boxes[i][2] * imH)))
+                xmax = int(min(imW,(boxes[i][3] * imW)))
+                # Draw box
+                cv2.rectangle(frame, (xmin,ymin), (xmax,ymax), (10, 255, 0), 2)
+                # Draw label
+                object_name = labels[int(classes[i])] # Look up object name from "labels" array using class index
+                label = '%s: %d%%' % (object_name, int(scores[i]*100)) # Example: 'person: 72%'
+                labelSize, baseLine = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2) # Get font size
+                label_ymin = max(ymin, labelSize[1] + 10) # Make sure not to draw label too close to top of window
+                cv2.rectangle(frame, (xmin, label_ymin-labelSize[1]-10), (xmin+labelSize[0], label_ymin+baseLine-10), (255, 255, 255), cv2.FILLED) # Draw white box to put label text in
+                cv2.putText(frame, label, (xmin, label_ymin-7), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2) # Draw label text
+                
+                # Evaluate occurrances               
+                occurrances = process_occurrence(occurrances,int(classes[i]),time.time())
         
-            # Acquire frame and resize to expected shape [1xHxWx3]
-            frame = frame1.copy()
-            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            frame_resized = cv2.resize(frame_rgb, (width, height))
-            input_data = np.expand_dims(frame_resized, axis=0)
+        # Calculate framerate
+        t2 = cv2.getTickCount()
+        time1 = (t2-t1)/freq
+        frame_rate_calc= 1/time1
         
-            # Normalize pixel values if using a floating model (i.e. if model is non-quantized)
-            if floating_model:
-                input_data = (np.float32(input_data) - input_mean) / input_std
+        # Draw framerate in corner of frame
+        cv2.putText(frame,'FPS: {0:.2f}'.format(frame_rate_calc),(0,30),cv2.FONT_HERSHEY_SIMPLEX,1,(255,255,0),2,cv2.LINE_AA)
         
-            # Perform the actual detection by running the model with the image as input
-            interpreter.set_tensor(input_details[0]['index'],input_data)
-            interpreter.invoke()
+        ret, buffer = cv2.imencode('.jpg', frame)
+        app.logger.info("MobileNet: Shape of result image: " + str(frame.shape))
         
-            # Retrieve detection results
-            boxes = interpreter.get_tensor(output_details[0]['index'])[0] # Bounding box coordinates of detected objects
-            classes = interpreter.get_tensor(output_details[1]['index'])[0] # Class index of detected objects
-            scores = interpreter.get_tensor(output_details[2]['index'])[0] # Confidence of detected objects
-            #num = interpreter.get_tensor(output_details[3]['index'])[0]  # Total number of detected objects (inaccurate and not needed)
+        frame = buffer.tobytes()
+                # Store occurrances in cache to be able to retriev information later
+        cache.set("occurrances", occurrances)
+
+        yield (b'--frame\r\n'
+                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')  # concat frame one by one and show result
         
-            # Loop over all detections and draw detection box if confidence is above minimum threshold
-            for i in range(len(scores)):
-                if ((scores[i] > min_conf_threshold) and (scores[i] <= 1.0)):
-                    # Get bounding box coordinates and draw box
-                    # Interpreter can return coordinates that are outside of image dimensions, need to force them to be within image using max() and min()
-                    ymin = int(max(1,(boxes[i][0] * imH)))
-                    xmin = int(max(1,(boxes[i][1] * imW)))
-                    ymax = int(min(imH,(boxes[i][2] * imH)))
-                    xmax = int(min(imW,(boxes[i][3] * imW)))
-                    # Draw box
-                    cv2.rectangle(frame, (xmin,ymin), (xmax,ymax), (10, 255, 0), 2)
-                    # Draw label
-                    object_name = labels[int(classes[i])] # Look up object name from "labels" array using class index
-                    label = '%s: %d%%' % (object_name, int(scores[i]*100)) # Example: 'person: 72%'
-                    labelSize, baseLine = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2) # Get font size
-                    label_ymin = max(ymin, labelSize[1] + 10) # Make sure not to draw label too close to top of window
-                    cv2.rectangle(frame, (xmin, label_ymin-labelSize[1]-10), (xmin+labelSize[0], label_ymin+baseLine-10), (255, 255, 255), cv2.FILLED) # Draw white box to put label text in
-                    cv2.putText(frame, label, (xmin, label_ymin-7), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2) # Draw label text
-                    
-                    # Evaluate occurrances               
-                    occurrances = process_occurrence(occurrances,int(classes[i]),time.time())
-           
-            # Calculate framerate
-            t2 = cv2.getTickCount()
-            time1 = (t2-t1)/freq
-            frame_rate_calc= 1/time1
-           
-            # Draw framerate in corner of frame
-            cv2.putText(frame,'FPS: {0:.2f}'.format(frame_rate_calc),(0,30),cv2.FONT_HERSHEY_SIMPLEX,1,(255,255,0),2,cv2.LINE_AA)
-           
-            ret, buffer = cv2.imencode('.jpg', frame)
-            app.logger.info("MobileNet: Shape of result image: " + str(frame.shape))
-            
-            frame = buffer.tobytes()
-                    # Store occurrances in cache to be able to retriev information later
-            cache.set("occurrances", occurrances)
-            
-            yield (b'--frame\r\n'
-                   b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')  # concat frame one by one and show result
-            
             
 def gen_frames_yolo(MODEL_NAME):
     # for yolov5
@@ -286,7 +315,7 @@ def gen_frames_yolo(MODEL_NAME):
         # Start timer (for calculating frame rate)
         t1 = cv2.getTickCount()
         
-        success, frame1 = camera.read()  # read the camera frame
+        frame1 = camera.read()  # read the camera frame
         img = cv2.resize(frame1, imgsz, interpolation = cv2.INTER_AREA)
         img = img[None]
         img = np.transpose(img, (0,3,1,2))
@@ -370,7 +399,15 @@ def gen_frames_yolo(MODEL_NAME):
 def video_feed():
     # Video streaming route. Put this in the src attribute of an img tag
     model = request.args.get('model')
-    app.logger.info("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX_______Modelname: " + MODEL_NAME)
+    source = request.args.get('source')
+    source_url = request.args.get('source_url')
+    app.logger.info("XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX_______Modelname: " + MODEL_NAME + " Source: " + source + " Source_url: " + source_url)
+
+    global camera
+    if source == 'webcam':
+        camera = VideoCapture(0)
+    else:
+        camera = VideoCapture(source_url)
     
     if model == 'coco_ssd_mobilenet_v1':
         return Response(gen_frames_mobile(model), mimetype='multipart/x-mixed-replace; boundary=frame')
@@ -382,7 +419,9 @@ def video_feed():
 def index():
     """Video streaming home page."""
     data={
-    	'model': request.args.get('model')
+    	'model': request.args.get('model'),
+        'source': request.args.get('source'),
+        'source_url': request.args.get('source_url')
     }
     
     return render_template('index.html', data=data)
